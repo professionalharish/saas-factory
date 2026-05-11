@@ -2,18 +2,18 @@ name: Daily SaaS Factory Blueprint
 
 on:
   schedule:
-    - cron: '30 3 * * *' # Roz subah 9:00 AM IST par chalega
-  workflow_dispatch: # Isse aap manually bhi test kar sakte hain
+    - cron: '30 3 * * *' # Roz subah 9:00 AM IST
+  workflow_dispatch: # Manual test ke liye
 
 jobs:
-  build:
+  run-script:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
       - name: Set up Python
-          uses: actions/setup-python@v4
+        uses: actions/setup-python@v4
         with:
           python-version: '3.9'
 
@@ -22,7 +22,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run SaaS Hunter Script
+      - name: Run Script
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
