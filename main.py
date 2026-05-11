@@ -1,89 +1,66 @@
 import os
 import requests
-import praw
 import google.generativeai as genai
 
-# --- CONFIGURATION (GitHub Secrets/Env Vars) ---
+# --- CONFIGURATION (Only Gemini & Telegram needed) ---
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
-REDDIT_CLIENT_ID = os.getenv("REDDIT_CLIENT_ID")
-REDDIT_SECRET = os.getenv("REDDIT_SECRET")
 
 # AI Setup
 genai.configure(api_key=GEMINI_API_KEY)
 model = genai.GenerativeModel('gemini-1.5-flash')
 
-def fetch_reddit_pains():
-    print("Fetching Reddit data...")
-    try:
-        reddit = praw.Reddit(
-            client_id=REDDIT_CLIENT_ID,
-            client_secret=REDDIT_SECRET,
-            user_agent="SaaS-Hunter-v1"
-        )
-        
-        keywords = ['"alternative to"', '"too expensive"', '"how to automate"', '"frustrated with"', '"missing feature"']
-        subreddits = ['SaaS', 'Entrepreneur', 'SideProject', 'smallbusiness']
-        data = []
-
-        for sub in subreddits:
-            for query in keywords:
-                # Fetching latest posts from last 24 hours
-                for post in reddit.subreddit(sub).search(query, time_filter='day', limit=5):
-                    data.append(f"Source: r/{sub}\nTitle: {post.title}\nText: {post.selftext[:500]}\nURL: https://reddit.com{post.permalink}")
-        
-        return "\n---\n".join(data)
-    except Exception as e:
-        return f"Reddit API Error: {str(e)}"
+def fetch_market_pains():
+    print("Fetching Market Data (No-API Mode)...")
+    
+    # Hum Jina Reader use karenge jo Reddit/IndieHackers ko text mein convert kar deta hai
+    # Ye 100% free aur legal hai for research
+    sources = [
+        "https://r.jina.ai/https://www.reddit.com/r/SaaS/new",
+        "https://r.jina.ai/https://www.reddit.com/r/Entrepreneur/new",
+        "https://r.jina.ai/https://www.indiehackers.com/groups/ideas-and-validation"
+    ]
+    
+    combined_text = ""
+    for url in sources:
+        try:
+            response = requests.get(url, timeout=15)
+            if response.status_code == 200:
+                combined_text += response.text[:2000] # Har source se main content uthana
+        except Exception as e:
+            print(f"Error fetching {url}: {e}")
+            
+    return combined_text
 
 def analyze_and_factory(raw_data):
-    print("Generating SaaS Factory Blueprint...")
-    if not raw_data or len(raw_data) < 50:
-        return "Aaj market mein koi naya pain point nahi mila. Try changing keywords or wait for tomorrow."
+    print("AI Analysis in progress...")
+    if len(raw_data) < 100:
+        return "Data fetch nahi ho paya. Internet connection ya source check karein."
 
     prompt = f"""
-    You are an Elite Micro-SaaS Architect and Serial Maker. Analyze this raw data from Reddit:
+    Analyze these latest SaaS discussions and pain points:
     {raw_data}
     
-    TASK: Pick the TOP 2 most 'Viral-Ready' and 'High-Passive-Income' ideas.
-    
+    Identify the TOP 2 most 'Viral-Ready' Micro-SaaS ideas.
     For EACH idea, provide:
-    1. 🚀 **Product Blueprint**: Catchy Name, Tagline, and the 'Gap' (why current tools fail).
-    2. 🛠 **Technical Schema**: 
-       - Core Database Tables (SQL format for Supabase).
-       - Essential API Routes (Next.js App Router style).
-    3. 📢 **Marketing Kit (Ready-to-Use)**:
-       - A 'Cold Reply' for the original Reddit post (helpful, not spammy).
-       - A 3-tweet 'Build in Public' thread with hooks.
-       - A high-converting Hero Headline & Sub-headline.
-    4. 💰 **Monetization**: Suggested Pricing (Freemium/SaaS tiers).
-    5. 🔗 **Source Link**: The Reddit URL for direct outreach.
-
-    Language: Hinglish. Format: Professional Markdown with Emojis.
+    1. 🚀 Blueprint: Name & 'Gap' (why current tools fail).
+    2. 🛠 Technical: Database Schema (Supabase) & Core API Routes.
+    3. 📢 Marketing Kit: A 'Cold Reply' for the lead & 3-tweet thread.
+    4. 💰 Monetization: Suggested Pricing.
+    
+    Language: Hinglish. Format: Clean Markdown for Telegram.
     """
     response = model.generate_content(prompt)
     return response.text
 
 def send_telegram(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-    
-    # Split message if it's too long for Telegram (Limit 4096)
-    if len(message) > 4000:
-        chunks = [message[i:i+4000] for i in range(0, len(message), 4000)]
-    else:
-        chunks = [message]
-
-    for chunk in chunks:
-        payload = {
-            "chat_id": TELEGRAM_CHAT_ID,
-            "text": chunk,
-            "parse_mode": "Markdown"
-        }
-        requests.post(url, json=payload)
+    payload = {"chat_id": TELEGRAM_CHAT_ID, "text": message, "parse_mode": "Markdown"}
+    requests.post(url, json=payload)
 
 if __name__ == "__main__":
-    raw_pains = fetch_reddit_pains()
-    blueprint = analyze_and_factory(raw_pains)
+    data = fetch_market_pains()
+    blueprint = analyze_and_factory(data)
     send_telegram(blueprint)
-    print("Report sent to Telegram successfully!")
+    print("Success! Report sent to Telegram.")
