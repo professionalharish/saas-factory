@@ -28,22 +28,68 @@ def fetch_market_pains():
     return combined_text
 
 def analyze_and_blueprint(raw_data):
-    print("AI generating 3 high-quality separate blueprints...")
+    print("🧠 AI Analysis: Identifying 3 High-Signal Gold Mines...")
+    
+    # Ye prompt AI ko majboor karega deep analysis aur structured blueprint dene ke liye
     prompt = f"""
-    Identify exactly 3 High-Signal Micro-SaaS ideas. 
-    Crucial: End each idea with |||IDEA_SPLIT|||
-    Avoid complex markdown. Use simple bold text only.
-    Data: {raw_data}
-    """
+### ROLE: 
+Venture Capitalist & Micro-SaaS Architect (Pieter Levels Style).
+    
+### TASK:
+Analyze the provided market data AND use your own 2026 market intelligence to find EXACTLY 3 'High-Signal' Micro-SaaS ideas. 
+If the provided data is thin/blocked, prioritize identifying recurring "Irritant Problems" from your internal knowledge of the 2026 SaaS landscape.
+
+### EXECUTION:
+1. Focus on 'Single-Feature' tools that solve a 10-minute daily pain.
+2. Structure each idea clearly. 
+3. Use Hinglish for explanations to keep it practical and grounded.
+4. End every idea with this exact string: |||IDEA_SPLIT|||
+
+🔥 **NAME & VIRAL HOOK**
+Catchy name with a "Why share this?" factor.
+
+💡 **PAIN ANALYSIS (2026)**
+- Specific frustration: Log kis baat se pareshan hain?
+- The Gap: Current solutions kyun fail ho rahi hain?
+
+🚀 **TREND & VALIDATION**
+- Why now? (Mention 2026 market trends like AI Agents, Local-first apps, or Privacy-tech).
+- Target Market size and potential.
+
+🛠 **TECH BLUEPRINT**
+- **Supabase Schema**: Detailed tables and relations.
+- **Core API Logic**: Logic for the main feature.
+- **Stack**: Next.js (App Router), Supabase, Resend, Stripe.
+
+📢 **GTM (Go-To-Market)**
+- Launch Pad: Exactly kahan post karna hai (Subreddit/Discord/X).
+- Cold Reply: A 2-line direct message to convert the first user.
+
+💰 **MONETIZATION**
+- Pricing model: (Free tier vs Credits vs Subscription).
+- Validation Score (1-10) based on effort/reward ratio.
+
+|||IDEA_SPLIT|||
+
+### RAW DATA FOR CONTEXT:
+{raw_data}
+"""
+    
     try:
-        # Using a more robust model name
+        # gemini-2.0-flash is recommended for complex reasoning and structure
         response = client.models.generate_content(
             model="gemini-2.5-flash-lite", 
             contents=prompt
         )
-        return response.text
+        
+        # Clean response ensure karna
+        output = response.text if response.text else ""
+        if not output:
+            print("Warning: AI generated an empty response.")
+        return output
+
     except Exception as e:
-        print(f"AI Error: {e}")
+        print(f"AI Error in Analysis: {e}")
         return ""
 
 def send_to_telegram(message):
