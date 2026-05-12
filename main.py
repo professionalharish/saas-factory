@@ -10,44 +10,40 @@ TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 client = genai.Client(api_key=GEMINI_API_KEY)
 
 def fetch_market_pains():
-    print("Hunting for Gold Mines...")
-    # Using Jina Reader to bypass Reddit API blocks
+    print("Market data hunt shuru...")
     sources = [
         "https://r.jina.ai/https://www.reddit.com/r/SaaS/new",
         "https://r.jina.ai/https://www.reddit.com/r/SideProject/new",
         "https://r.jina.ai/https://www.indiehackers.com/groups/ideas-and-validation"
     ]
-    
     combined_text = ""
     for url in sources:
         try:
             response = requests.get(url, timeout=15)
             if response.status_code == 200:
-                combined_text += f"\n--- SOURCE: {url} ---\n"
-                combined_text += response.text[:2500] 
+                combined_text += f"\n--- SOURCE: {url} ---\n{response.text[:2000]}"
         except: continue
     return combined_text
 
 def analyze_and_blueprint(raw_data):
-    print("AI Analysis: Viral SaaS Hunter Mode...")
-    if not raw_data: return ""
-
+    print("AI generating 5 separate blueprints...")
+    
+    # Humne AI ko instruction di hai ki har idea ke baad |||IDEA_SPLIT||| lagaye
     prompt = f"""
-    You are an Elite Micro-SaaS Architect and a Viral Growth Hacker like Pieter Levels. 
-    Analyze the following market data and extract exactly 5 'High-Signal Gold Mines'.
+    You are an Elite Micro-SaaS Architect. Based on the data, extract 5 High-Signal ideas.
     
-    IMPORTANT: Start each idea with the '🔥' emoji.
+    CRITICAL INSTRUCTION: After finishing EACH idea, you MUST write the separator exactly like this: |||IDEA_SPLIT|||
     
-    For each idea, provide:
+    For each idea, provide this detailed structure:
     🔥 **Idea Name & Tagline**
-    💡 **The Micro-Problem & Gap** (Why enterprise tools fail)
-    🚀 **Viral Hook & Acquisition Strategy** (Where to post)
-    🛠 **Technical Blueprint (Next.js + Supabase Schema + API Routes)**
-    📢 **Marketing Kit (Cold Reply + Hero Headline)**
-    💰 **Monetization & Score (1-10)**
+    💡 **The Micro-Problem & Gap** (Detailed analysis)
+    🚀 **Viral Hook & Acquisition Strategy**
+    🛠 **Technical Blueprint** (Next.js + Supabase Schema + API Routes)
+    📢 **Marketing Kit** (Cold Reply + Hero Headline)
+    💰 **Monetization & Score**
     🔗 **Direct Lead/Context**
 
-    Language: Hinglish. Use clean Markdown.
+    Language: Hinglish. Use clean Markdown with bold headings.
     DATA: {raw_data}
     """
     
@@ -62,7 +58,6 @@ def analyze_and_blueprint(raw_data):
         return ""
 
 def send_to_telegram(message):
-    """Helper function to send a single message"""
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
     payload = {
         "chat_id": TELEGRAM_CHAT_ID, 
@@ -71,34 +66,27 @@ def send_to_telegram(message):
     }
     try:
         requests.post(url, json=payload)
-    except Exception as e:
-        print(f"Telegram Error: {e}")
+    except: pass
 
 def main():
-    print("Starting SaaS Factory...")
     raw_data = fetch_market_pains()
-    report = analyze_and_blueprint(raw_data)
+    full_report = analyze_and_blueprint(raw_data)
     
-    if not report:
-        send_to_telegram("❌ Aaj koi naya data nahi mila ya AI fail ho gaya.")
+    if not full_report:
+        send_to_telegram("❌ Error: AI ne response generate nahi kiya.")
         return
 
-    # LOGIC: Splitting the report into 5 separate messages based on the emoji
-    # ideas[0] will be any text before the first idea
-    ideas = report.split('🔥')
+    # Logic: Separator ke basis par split karna
+    ideas_list = full_report.split('|||IDEA_SPLIT|||')
     
-    # Send Intro if it exists
-    intro = ideas[0].strip()
-    if intro:
-        send_to_telegram(f"🚀 **SaaS Factory Report for Today**\n\n{intro}")
-
-    # Send each idea as a separate message
-    for idea in ideas[1:]:
-        # Adding the emoji back because split removes it
-        clean_message = "🔥" + idea.strip()
-        send_to_telegram(clean_message)
-
-    print("Process Complete! 5 messages sent.")
+    count = 0
+    for idea in ideas_list:
+        clean_idea = idea.strip()
+        if len(clean_idea) > 50: # Khali messages ya chote fragments avoid karne ke liye
+            send_to_telegram(clean_idea)
+            count += 1
+            
+    print(f"Done! {count} separate ideas sent to Telegram.")
 
 if __name__ == "__main__":
     main()
