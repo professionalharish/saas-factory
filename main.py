@@ -47,31 +47,35 @@ def analyze_and_blueprint(raw_data):
         return ""
 
 def send_to_telegram(message):
-    """Safe Telegram sender with auto-fallback for markdown errors"""
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
     
-    # Attempt 1: With Markdown
+    # --- DEBUG STEP: Ye line GitHub Logs mein poora message print karegi ---
+    print("\n--- DEBUG: MESSAGE START ---")
+    print(message)
+    print("--- DEBUG: MESSAGE END ---\n")
+    
     payload = {
-        "chat_id": TELEGRAM_CHAT_ID, 
-        "text": message, 
+        "chat_id": TELEGRAM_CHAT_ID,
+        "text": message,
         "parse_mode": "Markdown"
     }
     
     try:
         r = requests.post(url, json=payload)
+        # Agar Telegram reject karta hai toh asli wajah print hogi
         if r.status_code != 200:
-            # Attempt 2: If markdown fails, send as Plain Text
-            print(f"Markdown failed (Error {r.status_code}), sending plain text...")
+            print(f"❌ Telegram Error Code: {r.status_code}")
+            print(f"❌ Telegram Response: {r.text}")
+            
+            # Retry with Plain Text (Jab Markdown fail ho jaye)
+            print("🔄 Retrying as plain text...")
             payload.pop("parse_mode")
-            retry = requests.post(url, json=payload)
-            if retry.status_code == 200:
-                print("Delivered as plain text.")
-            else:
-                print(f"Final Failure: {retry.text}")
+            r2 = requests.post(url, json=payload)
+            print(f"🔄 Plain Text Status: {r2.status_code}")
         else:
-            print("Delivered with Markdown.")
+            print("✅ Message delivered successfully!")
     except Exception as e:
-        print(f"Telegram Request Failed: {e}")
+        print(f"❌ Connection Error: {e}")
 
 def main():
     raw_data = fetch_market_pains()
