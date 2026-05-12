@@ -27,11 +27,7 @@ def fetch_market_pains():
         "site:realtor.com/forums 'marketing automation' struggle",
         "site:accountingtoday.com 'excel' manual headache",
         "\"I would pay for a tool that\" 2026",
-        "\"how to automate\" site:medium.com manual process",
-        "https://r.jina.ai/https://www.google.com/search?q=site:reddit.com+%22how+can+I+automate%22+saas",
-        "https://r.jina.ai/https://www.google.com/search?q=site:quora.com+%22is+there+an+alternative+to%22+simple",
-        "https://r.jina.ai/https://news.ycombinator.com/ask",
-        "https://r.jina.ai/https://www.indiehackers.com/groups/ideas-and-validation"
+        "\"how to automate\" site:medium.com manual process"
     ]
 
     combined_text = ""
