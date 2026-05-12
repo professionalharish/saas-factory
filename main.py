@@ -87,9 +87,14 @@ For each idea, provide the structure below. Use '|||IDEA_SPLIT|||' at the end of
 
 def send_to_telegram(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-    payload = {"chat_id": TELEGRAM_CHAT_ID, "text": message, "parse_mode": "Markdown"}
+    payload = {
+        "chat_id": TELEGRAM_CHAT_ID,
+        "text": message,
+        "parse_mode": "Markdown"
+    }
     try:
         requests.post(url, json=payload)
+        print(f"Telegram Response: {r.status_code}, {r.text}") # Ye logs mein dikhayega
     except:
         pass
 
