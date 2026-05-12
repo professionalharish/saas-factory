@@ -1,5 +1,6 @@
 import os
 import requests
+import time
 from google import genai
 
 # --- CONFIGURATION ---
@@ -10,119 +11,118 @@ TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 client = genai.Client(api_key=GEMINI_API_KEY)
 
 def fetch_market_pains():
-    print("Market data hunt shuru...")
-    sources = [
-        "https://r.jina.ai/https://www.reddit.com/r/SaaS/new",
-        "https://r.jina.ai/https://www.reddit.com/r/SideProject/new",
+    print("🚀 Global Intelligence Gathering (Last 30-90 days)...")
+    
+    # 20+ Targeted Queries for high-signal pain points
+    # tbs=qdr:m ensures results from the LAST MONTH ONLY
+    queries = [
+        "site:reddit.com/r/SaaS 'wish there was a tool' after:2026-03-01",
+        "site:reddit.com/r/smallbusiness 'manual task' annoying after:2026-03-01",
+        "site:reddit.com/r/startups 'alternative to' expensive",
+        "site:quora.com 'is there a simple app for' 2026",
+        "site:news.ycombinator.com 'Ask HN: What are you struggling with'",
+        "site:indiehackers.com 'looking for' automation tool",
+        "site:trustpilot.com 'too complex' software review",
+        "site:g2.com 'missing feature' simple version",
+        "site:realtor.com/forums 'marketing automation' struggle",
+        "site:accountingtoday.com 'excel' manual headache",
+        "\"I would pay for a tool that\" 2026",
+        "\"how to automate\" site:medium.com manual process",
+        "https://r.jina.ai/https://www.google.com/search?q=site:reddit.com+%22how+can+I+automate%22+saas",
+        "https://r.jina.ai/https://www.google.com/search?q=site:quora.com+%22is+there+an+alternative+to%22+simple",
+        "https://r.jina.ai/https://news.ycombinator.com/ask",
         "https://r.jina.ai/https://www.indiehackers.com/groups/ideas-and-validation"
     ]
+
     combined_text = ""
-    for url in sources:
+    for q in queries:
+        encoded_q = q.replace(' ', '+')
+        # Using s.jina.ai for fast search result formatting
+        search_url = f"https://s.jina.ai/https://www.google.com/search?q={encoded_q}&tbs=qdr:m"
+        
         try:
-            response = requests.get(url, timeout=15)
+            print(f"🔍 Searching: {q[:40]}...")
+            response = requests.get(search_url, timeout=12)
             if response.status_code == 200:
-                combined_text += f"\n--- SOURCE: {url} ---\n{response.text[:2000]}"
-        except: 
+                combined_text += f"\n--- SOURCE DATA ---\n{response.text[:1500]}\n"
+            
+            time.sleep(1) # API Rate limit protection
+        except:
             continue
+            
     return combined_text
 
 def analyze_and_blueprint(raw_data):
-    print("AI generating 3 high-quality separate blueprints...")
+    print("🧠 AI Analysis: 3 High-Potential Gold Mines Only...")
     
-    # Corrected Indentation for prompt
     prompt = f"""
 ### ROLE: 
-You are a World-Class Micro-SaaS Architect and a Venture Capitalist. Your specialty is finding 'Irritant Problems' that can be solved with a 'Single-Feature' tool and scaled to $1,000/mo in 30 days.
+Venture Capitalist & Micro-SaaS Architect (Pieter Levels Style).
+    
+### GOAL:
+Extract EXACTLY 3 (Three) 'High-Signal' Micro-SaaS ideas from the provided data.
+Reject generic ideas. Find 'Irritant Problems' (5-min tasks done 10x/day).
 
-### TASK:
-Analyze the provided market data and identify EXACTLY 3 (Three) High-Signal Gold Mines. 
-Quality is more important than quantity. If you provide 3 ideas, each must be a complete 'Business-in-a-Box'.
+### FORMAT: 
+For each idea, provide the structure below. Use '|||IDEA_SPLIT|||' at the end of each.
 
-### EXECUTION GUIDELINES:
-1. **Focus on the 'Irritant'**: Find tasks that take 5-10 minutes but are done multiple times a day (High Frequency).
-2. **Anti-Enterprise**: Suggest solutions that are 10x simpler than Salesforce, HubSpot, or Jira.
-3. **Tech Stack**: Must be built using Next.js, Tailwind CSS, and Supabase.
-4. **SEPARATOR**: You MUST end every idea with this exact string: |||IDEA_SPLIT|||
-
-### FOR EACH IDEA, PROVIDE THIS STRUCTURE:
-
-🔥 **IDEA NAME & VIRAL TAGLINE**
-
-💡 **THE MICRO-PROBLEM & MARKET GAP**
-- **The Pain**: What exactly is the user crying about in the data?
-- **The Gap**: Why is the current solution failing them? 
-- **User Psychology**: Why will they pay for THIS specific solution?
-
-🚀 **VIRAL GROWTH & ACQUISITION PLAN**
-- **The 'Viral Loop'**: Why would a user post a screenshot of this on X or LinkedIn?
-- **Launch Strategy**: Which specific Subreddit and what exact hook to use?
-
-🛠 **TECHNICAL ARCHITECTURE (THE BLUEPRINT)**
-- **Supabase Schema**: Detailed tables and columns.
-- **Critical Logic**: Explain the main API Route logic.
-- **Stack**: Next.js, Supabase Auth, Resend, Stripe.
-
-📢 **MARKETING & SALES KIT**
-- **Hero Headline**: Magnetic H1.
-- **3 Killer Bullet Points**: Benefits.
-- **Cold Outreach Script**: Direct message to the source user.
-
-💰 **MONETIZATION & VALIDATION**
-- **Revenue Model**: Pricing details.
-- **Difficulty Score (1-10)**
-- **Viral Potential (1-10)**
-
-🔗 **DIRECT LEAD & SOURCE**
-- Link or context from data.
+🔥 **NAME & VIRAL HOOK**
+💡 **PAIN ANALYSIS (LAST 90 DAYS)**: What specific recent frustration is this solving?
+🚀 **TREND & VALIDATION**: Why is this trending now (2026)? Mention relevant keywords.
+🛠 **TECH BLUEPRINT**: Next.js + Supabase schema + API Logic.
+📢 **GTM (Go-To-Market)**: Specific community link and a 2-line cold DM for the lead.
+💰 **MONETIZATION**: Pricing strategy (Free/Credits/Subscription).
 
 |||IDEA_SPLIT|||
 
-### MARKET DATA TO ANALYZE:
+### MARKET DATA:
 {raw_data}
 """
     
     try:
-        # Use the same model name you were using or 'gemini-2.5-flash-lite'
         response = client.models.generate_content(
             model="gemini-2.5-flash-lite", 
             contents=prompt
         )
         return response.text
     except Exception as e:
-        print(f"AI Error: {e}")
+        print(f"AI ERROR: {e}")
         return ""
 
 def send_to_telegram(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-    payload = {
-        "chat_id": TELEGRAM_CHAT_ID, 
-        "text": message, 
-        "parse_mode": "Markdown"
-    }
+    payload = {"chat_id": TELEGRAM_CHAT_ID, "text": message, "parse_mode": "Markdown"}
     try:
         requests.post(url, json=payload)
-    except: 
+    except:
         pass
 
 def main():
+    start_time = time.time()
     raw_data = fetch_market_pains()
-    full_report = analyze_and_blueprint(raw_data)
     
-    if not full_report:
-        send_to_telegram("❌ Error: AI ne response generate nahi kiya.")
+    if not raw_data:
+        send_to_telegram("❌ No fresh data found today.")
         return
 
-    # Logic: Separator ke basis par split karna
-    ideas_list = full_report.split('|||IDEA_SPLIT|||')
+    report = analyze_and_blueprint(raw_data)
     
+    if not report:
+        send_to_telegram("❌ AI failed to analyze data.")
+        return
+
+    # Splitting into separate messages
+    ideas = report.split('|||IDEA_SPLIT|||')
     count = 0
-    for idea in ideas_list:
+    for idea in ideas:
         clean_idea = idea.strip()
-        if len(clean_idea) > 100: # Increased threshold for quality
+        if len(clean_idea) > 100:
             send_to_telegram(clean_idea)
             count += 1
-            
-    print(f"Done! {count} separate ideas sent to Telegram.")
+            time.sleep(1) # Prevent Telegram spam block
+
+    duration = round((time.time() - start_time) / 60, 2)
+    print(f"✅ Success! Sent {count} ideas in {duration} minutes.")
 
 if __name__ == "__main__":
     main()
