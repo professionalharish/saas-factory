@@ -12,17 +12,18 @@ client = genai.Client(api_key=GEMINI_API_KEY)
 
 def fetch_market_pains():
     print("Market data hunt shuru...")
-    sources = [
-        "https://r.jina.ai/https://www.reddit.com/r/SaaS/new",
-        "https://r.jina.ai/https://www.reddit.com/r/SideProject/new",
-        "https://r.jina.ai/https://www.indiehackers.com/groups/ideas-and-validation"
+    # Jina search use kar rahe hain taaki data block na ho
+    queries = [
+        "latest saas pain points reddit 2026",
+        "annoying business tasks automation reddit 2026"
     ]
     combined_text = ""
-    for url in sources:
+    for q in queries:
         try:
+            url = f"https://s.jina.ai/{q.replace(' ', '%20')}"
             response = requests.get(url, timeout=15)
             if response.status_code == 200:
-                combined_text += f"\n--- SOURCE: {url} ---\n{response.text[:2000]}"
+                combined_text += f"\n--- DATA ---\n{response.text[:1500]}"
         except: continue
     return combined_text
 
@@ -31,10 +32,11 @@ def analyze_and_blueprint(raw_data):
     prompt = f"""
     Identify exactly 3 High-Signal Micro-SaaS ideas. 
     Crucial: End each idea with |||IDEA_SPLIT|||
-    Use very simple Markdown. Avoid complex symbols.
+    Avoid complex markdown. Use simple bold text only.
     Data: {raw_data}
     """
     try:
+        # Using a more robust model name
         response = client.models.generate_content(
             model="gemini-1.5-flash", 
             contents=prompt
@@ -45,10 +47,10 @@ def analyze_and_blueprint(raw_data):
         return ""
 
 def send_to_telegram(message):
-    """Safe Telegram sender with fallback"""
+    """Safe Telegram sender with auto-fallback for markdown errors"""
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
     
-    # Pehle Markdown ke saath try karte hain
+    # Attempt 1: With Markdown
     payload = {
         "chat_id": TELEGRAM_CHAT_ID, 
         "text": message, 
@@ -57,13 +59,17 @@ def send_to_telegram(message):
     
     try:
         r = requests.post(url, json=payload)
-        # Agar Markdown fail hota hai (400 error), toh Plain Text bhejte hain
         if r.status_code != 200:
-            print(f"Markdown failed, sending plain text. Error: {r.text}")
+            # Attempt 2: If markdown fails, send as Plain Text
+            print(f"Markdown failed (Error {r.status_code}), sending plain text...")
             payload.pop("parse_mode")
-            requests.post(url, json=payload)
+            retry = requests.post(url, json=payload)
+            if retry.status_code == 200:
+                print("Delivered as plain text.")
+            else:
+                print(f"Final Failure: {retry.text}")
         else:
-            print("Message delivered successfully via Markdown.")
+            print("Delivered with Markdown.")
     except Exception as e:
         print(f"Telegram Request Failed: {e}")
 
@@ -82,7 +88,7 @@ def main():
         if len(clean_idea) > 100:
             send_to_telegram(clean_idea)
             count += 1
-            time.sleep(2) # Telegram Flood limit se bachne ke liye delay
+            time.sleep(2) # Flood control
             
     print(f"Done! {count} separate ideas processed.")
 
