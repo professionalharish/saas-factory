@@ -3,8 +3,6 @@ name: Daily SaaS Factory Blueprint
 on:
   workflow_dispatch:
 
-  schedule:
-    - cron: '*/5 * * * *'
 
 jobs:
   run-script:
