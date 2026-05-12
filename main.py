@@ -90,7 +90,7 @@ def send_to_telegram(message):
     payload = {
         "chat_id": TELEGRAM_CHAT_ID,
         "text": message,
-        "parse_mode": "Markdown"
+        #"parse_mode": "Markdown"
     }
     try:
         requests.post(url, json=payload)
