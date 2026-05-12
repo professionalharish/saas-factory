@@ -82,9 +82,9 @@ Quality is more important than quantity. If you provide 3 ideas, each must be a 
 """
     
     try:
-        # Use the same model name you were using or 'gemini-2.0-flash'
+        # Use the same model name you were using or 'gemini-2.5-flash-lite'
         response = client.models.generate_content(
-            model="gemini-2.0-flash", 
+            model="gemini-2.5-flash-lite", 
             contents=prompt
         )
         return response.text
