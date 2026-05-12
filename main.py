@@ -38,7 +38,7 @@ def analyze_and_blueprint(raw_data):
     try:
         # Using a more robust model name
         response = client.models.generate_content(
-            model="gemini-1.5-flash", 
+            model="gemini-2.5-flash-lite", 
             contents=prompt
         )
         return response.text
